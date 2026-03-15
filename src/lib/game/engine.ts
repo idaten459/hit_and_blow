@@ -171,16 +171,6 @@ export function validateGuessValues(settings: GameSettings, values: number[]): V
   };
 }
 
-function getRoundGuesses(guesses: Guess[], roundNumber: number): Guess[] {
-  return guesses.filter((guess) => guess.roundNumber === roundNumber);
-}
-
-function resolveRoundWinners(state: RoundState): string[] {
-  return getRoundGuesses(state.guesses, state.roundNumber)
-    .filter((guess) => guess.feedback.isCorrect)
-    .map((guess) => guess.playerId);
-}
-
 export function advanceRound(
   state: RoundState,
   playerId: string,
@@ -222,8 +212,18 @@ export function advanceRound(
     guesses: [...state.guesses, guess]
   };
 
-  if (feedback.isCorrect && nextState.finalRoundNumber === null) {
+  if (feedback.isCorrect) {
     nextState.finalRoundNumber = nextState.roundNumber;
+    nextState.winnerIds = [activePlayer.id];
+    nextState.status = "finished";
+    nextState.endedAt = new Date().toISOString();
+
+    return {
+      nextState,
+      guess,
+      feedback,
+      roundResolved: true
+    };
   }
 
   const isRoundLastTurn = nextState.currentPlayerIndex === nextState.players.length - 1;
@@ -232,11 +232,7 @@ export function advanceRound(
   if (isRoundLastTurn) {
     roundResolved = true;
 
-    if (nextState.finalRoundNumber === nextState.roundNumber) {
-      nextState.winnerIds = resolveRoundWinners(nextState);
-      nextState.status = "finished";
-      nextState.endedAt = new Date().toISOString();
-    } else if (
+    if (
       nextState.settings.turnLimit !== null &&
       nextState.roundNumber >= nextState.settings.turnLimit
     ) {

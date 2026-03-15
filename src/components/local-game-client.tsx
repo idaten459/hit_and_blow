@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation";
 import { MatchConsole } from "@/components/match-console";
 import { createEmptyDraft, findNextSlotIndex, toGuessValues } from "@/lib/game/draft";
 import { advanceRound, buildAssistInfo, createInitialRoundState, generateSecret } from "@/lib/game/engine";
-import { getPendingRoundResolutionMessage } from "@/lib/game/format";
 import { createMatchSummary } from "@/lib/game/summary";
 import type { GameMode, GameSettings, RoundState, SessionPlayer } from "@/lib/game/types";
 import { appendMatchSummary } from "@/lib/session/history";
@@ -53,26 +52,10 @@ function getStatus(state: RoundState): { tone: "neutral" | "success" | "warning"
       };
     }
 
-    if (state.winnerIds.length > 1) {
-      return {
-        tone: "success",
-        text: "同じラウンドで両者が正解したため引き分けです。"
-      };
-    }
-
     const winner = state.players.find((player) => player.id === state.winnerIds[0]);
     return {
       tone: "success",
       text: `${winner?.name ?? "プレイヤー"} が正解しました。`
-    };
-  }
-
-  const pendingResolutionMessage = getPendingRoundResolutionMessage(state);
-
-  if (pendingResolutionMessage) {
-    return {
-      tone: "warning",
-      text: pendingResolutionMessage
     };
   }
 
@@ -183,7 +166,7 @@ export function LocalGameClient({ mode }: Readonly<{ mode: "solo" | "local" }>) 
       subtitle={
         mode === "solo"
           ? "完全ランダムな秘密列を、制限ターン内に解き切ります。"
-          : "1台の端末を共有し、同じ秘密列を交互に推理します。"
+          : "1台の端末を共有し、同じ秘密列を交互に推理します。正解が出た時点で決着します。"
       }
       settings={settings}
       players={roundState.players}
@@ -211,7 +194,7 @@ export function LocalGameClient({ mode }: Readonly<{ mode: "solo" | "local" }>) 
           <p className="card-copy" style={{ marginTop: "0.9rem" }}>
             {mode === "solo"
               ? "1 ターンにつき 1 回だけ推理します。"
-              : "1 ラウンドで両者が 1 回ずつ推理し、同ラウンドでの正解は引き分けです。"}
+              : "どちらかが正解した時点で、そのプレイヤーの勝利で終了します。"}
           </p>
           <div className="inline-actions" style={{ marginTop: "1rem" }}>
             <button className="button" type="button" onClick={resetMatch}>

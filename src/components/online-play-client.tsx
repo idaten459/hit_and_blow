@@ -5,10 +5,11 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { io, type Socket } from "socket.io-client";
 import { MatchConsole } from "@/components/match-console";
+import { RoomCodeCopy } from "@/components/room-code-copy";
 import { createEmptyDraft, findNextSlotIndex, hasAnyDraftValue, toGuessValues } from "@/lib/game/draft";
 import { buildAssistInfo } from "@/lib/game/engine";
-import { getPendingRoundResolutionMessage } from "@/lib/game/format";
 import type { MatchSummary, RoomStatePayload, SessionPlayer } from "@/lib/game/types";
+import { getViewerPlayerName, mapRoomStateForViewer, mapSummaryForViewer } from "@/lib/player-display";
 import { appendMatchSummary, loadOnlineSession, saveOnlineSession } from "@/lib/session/history";
 import { getOrCreatePlayerToken } from "@/lib/session/token";
 import { parseSettingsFromSearchParams } from "@/lib/settings";
@@ -30,6 +31,7 @@ export function OnlinePlayClient() {
   const tokenRef = useRef<string>("");
   const savedSummaryRef = useRef<string | null>(null);
   const roomStateRef = useRef<RoomStatePayload | null>(null);
+  const myPlayerIdRef = useRef<string | null>(null);
 
   const [roomState, setRoomState] = useState<RoomStatePayload | null>(null);
   const [myPlayerId, setMyPlayerId] = useState<string | null>(null);
@@ -42,31 +44,35 @@ export function OnlinePlayClient() {
   const [summary, setSummary] = useState<MatchSummary | null>(null);
   const [isBusy, setIsBusy] = useState(false);
 
-  const deferredGuesses = useDeferredValue(roomState?.roundState?.guesses ?? []);
   const activeSettings = roomState?.settings ?? draftSettings;
+  const displayRoomState = useMemo(
+    () => (roomState ? mapRoomStateForViewer(roomState, myPlayerId) : null),
+    [myPlayerId, roomState]
+  );
+  const deferredGuesses = useDeferredValue(displayRoomState?.roundState?.guesses ?? []);
   const assistInfo =
-    activeSettings.assistEnabled && roomState?.roundState
+    activeSettings.assistEnabled && displayRoomState?.roundState
       ? buildAssistInfo(activeSettings, deferredGuesses)
       : null;
-  const pendingResolutionMessage = getPendingRoundResolutionMessage(roomState?.roundState ?? null);
 
   const currentPlayer = useMemo(() => {
-    if (!roomState?.roundState) {
+    if (!displayRoomState?.roundState) {
       return null;
     }
 
-    return roomState.players[roomState.roundState.currentPlayerIndex] ?? null;
-  }, [roomState]);
+    return displayRoomState.players[displayRoomState.roundState.currentPlayerIndex] ?? null;
+  }, [displayRoomState]);
 
-  const everyoneConnected = roomState?.players.every((player) => player.connected) ?? false;
-  const isMyTurn = currentPlayer?.id === myPlayerId && roomState?.phase === "active" && everyoneConnected;
+  const everyoneConnected = displayRoomState?.players.every((player) => player.connected) ?? false;
+  const isMyTurn =
+    currentPlayer?.id === myPlayerId && displayRoomState?.phase === "active" && everyoneConnected;
   const opponentDraft = useMemo(() => {
-    if (!roomState || !myPlayerId) {
+    if (!displayRoomState || !myPlayerId) {
       return null;
     }
 
-    const otherPlayer = roomState.players.find((player) => player.id !== myPlayerId);
-    const draft = roomState.drafts.find((entry) => entry.playerId === otherPlayer?.id);
+    const otherPlayer = displayRoomState.players.find((player) => player.id !== myPlayerId);
+    const draft = displayRoomState.drafts.find((entry) => entry.playerId === otherPlayer?.id);
 
     if (!otherPlayer || !draft || !hasAnyDraftValue(draft.values)) {
       return null;
@@ -76,19 +82,24 @@ export function OnlinePlayClient() {
       playerName: otherPlayer.name,
       values: draft.values
     };
-  }, [myPlayerId, roomState]);
+  }, [displayRoomState, myPlayerId]);
 
-  const statusTone = summary ? "success" : pendingResolutionMessage ? "warning" : isMyTurn ? "neutral" : "warning";
+  const statusTone = summary ? "success" : isMyTurn ? "neutral" : "warning";
   const statusText = summary
     ? summary.winnerLabel
     : !everyoneConnected
       ? notice
-      : pendingResolutionMessage ??
-        (isMyTurn ? "あなたの番です。" : `${currentPlayer?.name ?? "相手"} の入力待ちです。`);
+      : isMyTurn
+        ? "あなたの番です。"
+        : `${currentPlayer?.name ?? "相手"} の入力待ちです。`;
 
   useEffect(() => {
     roomStateRef.current = roomState;
   }, [roomState]);
+
+  useEffect(() => {
+    myPlayerIdRef.current = myPlayerId;
+  }, [myPlayerId]);
 
   useEffect(() => {
     tokenRef.current = getOrCreatePlayerToken();
@@ -100,6 +111,13 @@ export function OnlinePlayClient() {
     const reconnectSession = loadOnlineSession();
 
     function describePlayer(playerId: string): string {
+      const player = roomStateRef.current?.players.find((entry) => entry.id === playerId);
+
+      if (player) {
+        return getViewerPlayerName(player, myPlayerIdRef.current);
+      }
+
+      return "\u30d7\u30ec\u30a4\u30e4\u30fc";
       return roomStateRef.current?.players.find((player) => player.id === playerId)?.name ?? "プレイヤー";
     }
 
@@ -171,15 +189,21 @@ export function OnlinePlayClient() {
     });
 
     socket.on("game:end", (nextSummary: MatchSummary) => {
-      setSummary(nextSummary);
-      setNotice(nextSummary.winnerLabel);
+      const viewerSummary = mapSummaryForViewer(
+        nextSummary,
+        roomStateRef.current?.players ?? [],
+        myPlayerIdRef.current
+      );
+
+      setSummary(viewerSummary);
+      setNotice(viewerSummary.winnerLabel);
       setCurrentGuess(createEmptyDraft(getDraftLength()));
       setActiveSlotIndex(0);
       saveOnlineSession(null);
 
-      if (savedSummaryRef.current !== nextSummary.id) {
-        appendMatchSummary(nextSummary);
-        savedSummaryRef.current = nextSummary.id;
+      if (savedSummaryRef.current !== viewerSummary.id) {
+        appendMatchSummary(viewerSummary);
+        savedSummaryRef.current = viewerSummary.id;
       }
     });
 
@@ -353,14 +377,14 @@ export function OnlinePlayClient() {
 
   if (!roomState || roomState.phase === "lobby") {
     const lobbyPlayers: Array<Pick<SessionPlayer, "id" | "name" | "connected">> =
-      roomState?.players ?? [];
+      displayRoomState?.players ?? [];
 
     return (
       <main className="page-shell fade-up">
         <section className="hero">
           <div className="hero-row">
             <span className="pill">オンライン対戦</span>
-            {roomState?.roomCode ? <span className="pill">部屋 {roomState.roomCode}</span> : null}
+            {roomState?.roomCode ? <RoomCodeCopy roomCode={roomState.roomCode} /> : null}
           </div>
           <div>
             <h1 className="hero-title">オンラインロビー</h1>
@@ -434,7 +458,7 @@ export function OnlinePlayClient() {
               <div className="players-list" style={{ marginTop: "1rem" }}>
                 {lobbyPlayers.map((player) => (
                   <div key={player.id} className="player-pill">
-                    <strong>{player.name}</strong>
+                    <strong>{getViewerPlayerName(player, myPlayerId)}</strong>
                     <span className={`presence ${player.connected ? "online" : ""}`}>
                       {player.connected ? "接続中" : "切断中"}
                     </span>
@@ -451,10 +475,10 @@ export function OnlinePlayClient() {
   return (
     <MatchConsole
       title="オンライン対戦"
-      subtitle="同じ秘密列を交互に推理するリアルタイム対戦です。"
+      subtitle="同じ秘密列を交互に推理し、正解が出た時点で終了するリアルタイム対戦です。"
       settings={activeSettings}
       roomCode={roomState.roomCode}
-      players={roomState.players}
+      players={displayRoomState?.players ?? []}
       currentPlayerName={currentPlayer?.name ?? null}
       roundLabel={`ラウンド ${roomState.roundState?.roundNumber ?? 1}`}
       statusTone={statusTone}
@@ -468,7 +492,7 @@ export function OnlinePlayClient() {
       onSubmitGuess={submitGuess}
       canSubmit={isMyTurn && currentGuess.every((value) => value !== null)}
       locked={!isMyTurn || roomState.phase !== "active" || summary !== null}
-      guesses={roomState.roundState?.guesses ?? []}
+      guesses={displayRoomState?.roundState?.guesses ?? []}
       assistInfo={assistInfo}
       assistEnabled={activeSettings.assistEnabled}
       secret={summary?.secret ?? null}

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import { CodeSequence } from "@/components/code-sequence";
+import { RoomCodeCopy } from "@/components/room-code-copy";
 import type { DraftValue } from "@/lib/game/draft";
 import { formatHistoryFeedback } from "@/lib/game/format";
 import type { AssistInfo, GameSettings, Guess, SessionPlayer } from "@/lib/game/types";
@@ -154,7 +155,7 @@ export function MatchConsole({
         <div className="hero-row">
           <span className="pill">{title}</span>
           <span className="pill">{roundLabel}</span>
-          {roomCode ? <span className="pill">部屋 {roomCode}</span> : null}
+          {roomCode ? <RoomCodeCopy roomCode={roomCode} /> : null}
         </div>
         <div>
           <h1 className="hero-title">{title}</h1>

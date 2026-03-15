@@ -18,6 +18,7 @@ for (const viewport of [
         await page.evaluate(
           ({ historyKey, summary }) => {
             window.sessionStorage.setItem(historyKey, JSON.stringify([summary]));
+            window.location.reload();
           },
           {
             historyKey: HISTORY_KEY,
@@ -25,11 +26,11 @@ for (const viewport of [
           }
         );
 
-        await page.reload({ waitUntil: "domcontentloaded" });
+        await page.waitForLoadState("domcontentloaded");
         await expect(page.locator(".history-entry").first()).toBeVisible();
 
         const overflow = await page.evaluate(() => {
-          const selectors = [".history-entry", ".history-line", ".history-code", ".history-secret"];
+          const selectors = [".history-entry", ".history-line", ".history-code", ".history-secret", ".history-player"];
 
           return selectors.flatMap((selector) =>
             Array.from(document.querySelectorAll<HTMLElement>(selector))
@@ -73,7 +74,10 @@ function buildSummary(codeLength: number, colorCount: number) {
     turnNumber: guessIndex + 1,
     createdAt: `2026-03-15T12:00:${`${guessIndex}`.padStart(2, "0")}.000Z`,
     playerId: guessIndex % 2 === 0 ? "player-1" : "player-2",
-    playerName: guessIndex % 2 === 0 ? "Player 1" : "Player 2"
+    playerName:
+      guessIndex % 2 === 0
+        ? "\u30d7\u30ec\u30a4\u30e4\u30fc1"
+        : "\u30d7\u30ec\u30a4\u30e4\u30fc2"
   }));
 
   return {
@@ -87,8 +91,8 @@ function buildSummary(codeLength: number, colorCount: number) {
       turnLimit: 10,
       assistEnabled: true
     },
-    players: ["Player 1", "Player 2"],
-    winnerLabel: "Player 1",
+    players: ["\u30d7\u30ec\u30a4\u30e4\u30fc1", "\u30d7\u30ec\u30a4\u30e4\u30fc2"],
+    winnerLabel: "\u30d7\u30ec\u30a4\u30e4\u30fc1",
     secret: Array.from({ length: codeLength }, (_, index) => ((index + 1) % colorCount) + 1),
     guesses,
     roundsPlayed: guesses.length,

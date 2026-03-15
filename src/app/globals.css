@@ -118,7 +118,8 @@ select {
 .history-summary,
 .token-grid,
 .meta-list,
-.players-list {
+.players-list,
+.room-code-actions {
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
@@ -259,6 +260,12 @@ select {
   color: var(--text);
   border: 1px solid rgba(86, 57, 34, 0.14);
   box-shadow: none;
+}
+
+.button.room-copy-button {
+  min-height: 0;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.9rem;
 }
 
 .button.ghost {
@@ -486,7 +493,7 @@ select {
 
 .history-line {
   display: grid;
-  grid-template-columns: max-content max-content minmax(0, 1fr) max-content;
+  grid-template-columns: max-content minmax(5.8rem, max-content) minmax(0, 1fr) max-content;
   align-items: start;
   gap: 0.35rem 0.8rem;
   line-height: 1.05;
@@ -532,9 +539,10 @@ select {
 }
 
 .history-player {
-  min-width: 0;
+  min-width: 5.8rem;
   font-size: 1rem;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .future-label,
@@ -807,7 +815,7 @@ select {
 
 @media (max-width: 720px) {
   .history-line {
-    grid-template-columns: max-content minmax(3.7rem, 0.62fr) minmax(0, 1.38fr) max-content;
+    grid-template-columns: max-content minmax(5.9rem, max-content) minmax(0, 1fr) max-content;
     align-items: start;
     gap: 0.25rem 0.45rem;
   }
@@ -823,8 +831,6 @@ select {
   }
 
   .history-player {
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
   }
 }
@@ -910,7 +916,7 @@ select {
   }
 
   .history-line {
-    grid-template-columns: max-content minmax(3.5rem, 0.58fr) minmax(0, 1.42fr) max-content;
+    grid-template-columns: max-content minmax(5.7rem, max-content) minmax(0, 1fr) max-content;
     gap: 0.2rem 0.45rem;
   }
 

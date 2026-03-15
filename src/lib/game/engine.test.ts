@@ -101,7 +101,7 @@ describe("settings and guesses", () => {
 });
 
 describe("advanceRound", () => {
-  it("allows the second player to answer in the deciding round and resolves a draw", () => {
+  it("finishes a two-player match immediately when the first player solves it", () => {
     const settings = makeSettings({
       mode: "local",
       codeLength: 2,
@@ -112,12 +112,14 @@ describe("advanceRound", () => {
     const initialState = createInitialRoundState(settings, players, [1, 2], 0);
 
     const firstGuess = advanceRound(initialState, "player-1", [1, 2]);
-    expect(firstGuess.nextState.status).toBe("active");
-    expect(firstGuess.nextState.currentPlayerIndex).toBe(1);
+    expect(firstGuess.nextState.status).toBe("finished");
+    expect(firstGuess.nextState.finalRoundNumber).toBe(1);
+    expect(firstGuess.nextState.winnerIds).toEqual(["player-1"]);
+    expect(firstGuess.roundResolved).toBe(true);
 
-    const secondGuess = advanceRound(firstGuess.nextState, "player-2", [1, 2]);
-    expect(secondGuess.nextState.status).toBe("finished");
-    expect(secondGuess.nextState.winnerIds).toEqual(["player-1", "player-2"]);
+    expect(() => advanceRound(firstGuess.nextState, "player-2", [1, 2])).toThrow(
+      "対局はすでに終了しています。"
+    );
   });
 
   it("finishes a solo match at the turn limit when unsolved", () => {
@@ -131,7 +133,7 @@ describe("advanceRound", () => {
     expect(result.nextState.winnerIds).toHaveLength(0);
   });
 
-  it("keeps the round open until the second online player responds after a perfect hit", () => {
+  it("finishes an online match immediately after a perfect hit", () => {
     const settings = makeSettings({
       mode: "online",
       codeLength: 6,
@@ -144,13 +146,9 @@ describe("advanceRound", () => {
 
     const firstGuess = advanceRound(state, "player-1", [1, 1, 2, 2, 3, 3]);
     expect(firstGuess.feedback.isCorrect).toBe(true);
-    expect(firstGuess.nextState.status).toBe("active");
+    expect(firstGuess.nextState.status).toBe("finished");
     expect(firstGuess.nextState.finalRoundNumber).toBe(1);
-    expect(firstGuess.nextState.currentPlayerIndex).toBe(1);
-
-    const secondGuess = advanceRound(firstGuess.nextState, "player-2", [4, 4, 4, 4, 4, 4]);
-    expect(secondGuess.nextState.status).toBe("finished");
-    expect(secondGuess.nextState.winnerIds).toEqual(["player-1"]);
+    expect(firstGuess.nextState.winnerIds).toEqual(["player-1"]);
   });
 });
 

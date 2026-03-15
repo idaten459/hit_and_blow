@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { advanceRound, buildAssistInfo, createInitialRoundState, generateSecret, scoreGuess, validateGuessValues, validateSettings } from "@/lib/game/engine";
-import type { GameSettings, SessionPlayer } from "@/lib/game/types";
+import {
+  EXACT_ASSIST_LIMIT,
+  advanceRound,
+  buildAssistInfo,
+  createInitialRoundState,
+  generateSecret,
+  scoreGuess,
+  validateGuessValues,
+  validateSettings
+} from "@/lib/game/engine";
+import type { GameSettings, Guess, SessionPlayer } from "@/lib/game/types";
 
 function makeSettings(overrides: Partial<GameSettings> = {}): GameSettings {
   return {
@@ -21,6 +30,22 @@ function makePlayers(count: number): SessionPlayer[] {
     token: `token-${index + 1}`,
     connected: true
   }));
+}
+
+function makeGuess(values: number[], hits: number, blows: number): Guess {
+  return {
+    values,
+    feedback: {
+      hits,
+      blows,
+      isCorrect: hits === values.length
+    },
+    roundNumber: 1,
+    turnNumber: 1,
+    createdAt: new Date().toISOString(),
+    playerId: "player-1",
+    playerName: "Player 1"
+  };
 }
 
 describe("scoreGuess", () => {
@@ -105,6 +130,28 @@ describe("advanceRound", () => {
     expect(result.nextState.status).toBe("finished");
     expect(result.nextState.winnerIds).toHaveLength(0);
   });
+
+  it("keeps the round open until the second online player responds after a perfect hit", () => {
+    const settings = makeSettings({
+      mode: "online",
+      codeLength: 6,
+      colorCount: 8,
+      allowDuplicates: true,
+      turnLimit: 20
+    });
+    const players = makePlayers(2);
+    const state = createInitialRoundState(settings, players, [1, 1, 2, 2, 3, 3], 0);
+
+    const firstGuess = advanceRound(state, "player-1", [1, 1, 2, 2, 3, 3]);
+    expect(firstGuess.feedback.isCorrect).toBe(true);
+    expect(firstGuess.nextState.status).toBe("active");
+    expect(firstGuess.nextState.finalRoundNumber).toBe(1);
+    expect(firstGuess.nextState.currentPlayerIndex).toBe(1);
+
+    const secondGuess = advanceRound(firstGuess.nextState, "player-2", [4, 4, 4, 4, 4, 4]);
+    expect(secondGuess.nextState.status).toBe("finished");
+    expect(secondGuess.nextState.winnerIds).toEqual(["player-1"]);
+  });
 });
 
 describe("buildAssistInfo", () => {
@@ -125,15 +172,45 @@ describe("buildAssistInfo", () => {
     expect(assist.contradiction).toBe(false);
   });
 
-  it("falls back to summary mode when candidate space is large", () => {
+  it("calculates an exact count for a narrowed game even when the initial candidate space exceeds the threshold", () => {
     const settings = makeSettings({
-      codeLength: 10,
-      colorCount: 10,
+      codeLength: 6,
+      colorCount: 8,
+      allowDuplicates: true
+    });
+    const players = makePlayers(1);
+    const state = createInitialRoundState(settings, players, [1, 1, 1, 1, 2, 2], 0);
+    const turn = advanceRound(state, "player-1", [1, 1, 1, 1, 1, 1]);
+
+    const assist = buildAssistInfo(settings, [turn.guess]);
+    expect(assist.mode).toBe("exact");
+    expect(assist.remainingCandidates).toBe(735);
+    expect(assist.displayCount).toBe("735");
+  });
+
+  it("shows the threshold label and exact detail when the exact count exceeds it", () => {
+    const settings = makeSettings({
+      codeLength: 6,
+      colorCount: 8,
       allowDuplicates: true
     });
 
     const assist = buildAssistInfo(settings, []);
-    expect(assist.mode).toBe("summary");
-    expect(assist.remainingCandidates).toBeNull();
+    expect(assist.mode).toBe("exact");
+    expect(assist.remainingCandidates).toBe(262_144);
+    expect(assist.displayCount).toBe(`${EXACT_ASSIST_LIMIT.toLocaleString()}以上`);
+    expect(assist.detail).toContain("262,144");
+  });
+
+  it("uses an estimate when the candidate space is too large to enumerate exactly", () => {
+    const settings = makeSettings({
+      codeLength: 7,
+      colorCount: 10,
+      allowDuplicates: true
+    });
+
+    const estimatedAssist = buildAssistInfo(settings, [makeGuess([1, 1, 1, 1, 1, 1, 1], 0, 0)]);
+    expect(estimatedAssist.mode).toBe("estimate");
+    expect(estimatedAssist.isAccurate).toBe(false);
   });
 });

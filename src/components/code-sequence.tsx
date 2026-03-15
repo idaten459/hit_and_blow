@@ -5,6 +5,7 @@ interface CodeSequenceProps {
   colorCount: number;
   className?: string;
   compact?: boolean;
+  wrap?: boolean;
 }
 
 function joinClasses(...values: Array<string | false | null | undefined>) {
@@ -15,18 +16,47 @@ export function CodeSequence({
   values,
   colorCount,
   className,
-  compact = false
+  compact = false,
+  wrap = false
 }: Readonly<CodeSequenceProps>) {
   const label = values.map((value) => value ?? "・").join(" ");
 
   if (colorCount > 6) {
-    return <span className={joinClasses("code-sequence numeric", className)}>{label}</span>;
+    if (wrap) {
+      return (
+        <span
+          aria-label={label}
+          className={joinClasses("code-sequence numeric wrap", compact && "compact", className)}
+          role="img"
+        >
+          {values.map((value, index) => (
+            <span
+              key={`code-sequence-numeric-${index}-${value ?? "empty"}`}
+              aria-hidden="true"
+              className={joinClasses("numeric-token", compact && "compact", value === null && "empty")}
+            >
+              {value ?? "-"}
+            </span>
+          ))}
+        </span>
+      );
+    }
+
+    return (
+      <span
+        aria-label={label}
+        className={joinClasses("code-sequence numeric", className)}
+        role="img"
+      >
+        {label}
+      </span>
+    );
   }
 
   return (
     <span
       aria-label={label}
-      className={joinClasses("code-sequence", compact && "compact", className)}
+      className={joinClasses("code-sequence", compact && "compact", wrap && "wrap", className)}
       role="img"
     >
       {values.map((value, index) => (

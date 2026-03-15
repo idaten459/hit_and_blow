@@ -38,10 +38,12 @@ export interface PlayerDraft {
 }
 
 export interface AssistInfo {
-  mode: "exact" | "summary";
+  mode: "exact" | "estimate";
   candidateSpace: number;
   isAccurate: boolean;
   remainingCandidates: number | null;
+  displayCount: string;
+  detail?: string;
   contradiction: boolean;
   usedSymbols: number[];
   unusedSymbols: number[];

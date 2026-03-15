@@ -220,6 +220,7 @@ select {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+  cursor: pointer;
   padding: 0.9rem 1rem;
   border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.66);
@@ -486,12 +487,17 @@ select {
 .history-line {
   display: grid;
   grid-template-columns: max-content max-content minmax(0, 1fr) max-content;
-  align-items: center;
+  align-items: start;
   gap: 0.35rem 0.8rem;
   line-height: 1.05;
 }
 
-.history-round {
+.history-turn {
+  display: inline-block;
+  width: 2ch;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
   font-weight: 700;
   font-size: 0.94rem;
@@ -500,16 +506,24 @@ select {
 
 .history-code {
   min-width: 0;
+  width: 100%;
   font-family: var(--font-mono);
   font-size: 1.12rem;
   letter-spacing: 0.04em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  text-align: left;
+  justify-self: stretch;
+  overflow-wrap: anywhere;
 }
 
 .history-code.code-sequence {
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.45rem;
+  justify-content: flex-start;
+  align-content: flex-start;
 }
 
 .history-code .code-badge {
@@ -530,6 +544,7 @@ select {
 
 .history-feedback {
   white-space: nowrap;
+  align-self: start;
   color: var(--brand-dark);
   font-size: 0.98rem;
   font-weight: 700;
@@ -543,6 +558,12 @@ select {
   vertical-align: middle;
 }
 
+.code-sequence.wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
 .code-sequence.compact {
   gap: 0.22rem;
 }
@@ -552,6 +573,44 @@ select {
   font-size: 1.14em;
   letter-spacing: 0.05em;
   white-space: nowrap;
+}
+
+.code-sequence.numeric.wrap {
+  white-space: normal;
+  row-gap: 0.28rem;
+}
+
+.numeric-token {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35rem;
+  padding: 0.18rem 0.36rem;
+  border-radius: 999px;
+  border: 1px solid rgba(86, 57, 34, 0.14);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.numeric-token.compact {
+  min-width: 1.1rem;
+  padding: 0.14rem 0.28rem;
+}
+
+.numeric-token.empty {
+  background: rgba(255, 255, 255, 0.44);
+  border-style: dashed;
+}
+
+.history-secret .code-sequence {
+  flex-wrap: wrap;
+}
+
+.history-secret .code-sequence.numeric {
+  display: inline;
+  white-space: normal;
 }
 
 .code-badge {
@@ -748,13 +807,19 @@ select {
 
 @media (max-width: 720px) {
   .history-line {
-    grid-template-columns: max-content 1fr max-content;
+    grid-template-columns: max-content minmax(3.7rem, 0.62fr) minmax(0, 1.38fr) max-content;
+    align-items: start;
+    gap: 0.25rem 0.45rem;
   }
 
   .history-code {
-    grid-column: 1 / -1;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    overflow: visible;
+  }
+
+  .history-feedback {
+    min-width: 6.25rem;
+    text-align: right;
   }
 
   .history-player {
@@ -789,22 +854,160 @@ select {
   }
 
   .play-shell {
-    padding-bottom: 31rem;
+    padding-bottom: 23.5rem;
   }
 
   .history-stage {
-    height: 27rem;
-    min-height: 27rem;
+    height: clamp(30rem, 66dvh, 36rem);
+    min-height: clamp(30rem, 66dvh, 36rem);
+  }
+
+  .history-stage .status-banner,
+  .history-stage .draft-panel {
+    padding: 0.75rem 0.85rem;
+  }
+
+  .history-stage .status-text {
+    font-size: 0.96rem;
+  }
+
+  .history-stage .status-banner:not(.warning) .status-label {
+    font-size: 0.94rem;
+  }
+
+  .history-stage .meta-list {
+    gap: 0.4rem;
+  }
+
+  .history-stage .meta-pill {
+    padding: 0.4rem 0.65rem;
+    font-size: 0.82rem;
+  }
+
+  .history-stage-body {
+    gap: 0.55rem;
+  }
+
+  .history-stage-header {
+    gap: 0.5rem;
+  }
+
+  .history-stage-header .card-title {
+    font-size: 1.05rem;
+  }
+
+  .history-stage-meta .subtle-copy {
+    font-size: 0.82rem;
+  }
+
+  .history-stage-list {
+    gap: 0.35rem;
+    padding-right: 0.1rem;
+  }
+
+  .history-entry {
+    padding: 0.58rem 0.72rem;
+  }
+
+  .history-line {
+    grid-template-columns: max-content minmax(3.5rem, 0.58fr) minmax(0, 1.42fr) max-content;
+    gap: 0.2rem 0.45rem;
+  }
+
+  .history-turn {
+    font-size: 0.82rem;
+  }
+
+  .history-player {
+    font-size: 0.92rem;
+  }
+
+  .history-code {
+    font-size: 0.98rem;
+  }
+
+  .history-code.code-sequence {
+    gap: 0.3rem;
+  }
+
+  .history-code .code-badge {
+    width: 0.9rem;
+    height: 0.9rem;
+  }
+
+  .numeric-token {
+    min-width: 1rem;
+    padding: 0.12rem 0.24rem;
+  }
+
+  .history-feedback {
+    font-size: 0.82rem;
   }
 
   .composer-shell {
     border-radius: 24px 24px 0 0;
     width: 100%;
-    padding: 0.8rem 0.85rem calc(0.95rem + env(safe-area-inset-bottom));
+    gap: 0.65rem;
+    padding: 0.7rem 0.75rem calc(0.8rem + env(safe-area-inset-bottom));
   }
 
   .composer-head {
+    gap: 0.35rem;
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .composer-shell .status-label {
+    font-size: 0.74rem;
+    letter-spacing: 0.06em;
+  }
+
+  .composer-shell .status-text {
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+
+  .composer-slots {
+    grid-template-columns: repeat(auto-fit, minmax(44px, 1fr));
+    gap: 0.5rem;
+  }
+
+  .composer-token-grid {
+    grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
+    gap: 0.5rem;
+  }
+
+  .composer-slots .guess-slot,
+  .composer-token-grid .token {
+    min-height: 48px;
+    border-radius: 16px;
+  }
+
+  .composer-shell .slot-sequence .code-badge {
+    width: 1.2rem;
+    height: 1.2rem;
+  }
+
+  .composer-shell .slot-sequence.numeric,
+  .composer-shell .token-symbol {
+    font-size: 1.2rem;
+  }
+
+  .composer-token-grid .token-chip {
+    width: 28px;
+    height: 28px;
+  }
+
+  .composer-actions {
+    flex-direction: row;
+    gap: 0.5rem;
+  }
+
+  .composer-actions .button {
+    min-width: 0;
+    min-height: 40px;
+    flex: 1 1 0;
+    padding: 0.65rem 0.5rem;
+    font-size: 0.92rem;
   }
 }

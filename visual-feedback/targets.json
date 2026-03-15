@@ -1,0 +1,32 @@
+[
+  {
+    "slug": "home",
+    "path": "/",
+    "readySelector": "main",
+    "settleMs": 600
+  },
+  {
+    "slug": "solo",
+    "path": "/play/solo",
+    "readySelector": "main",
+    "settleMs": 600
+  },
+  {
+    "slug": "local",
+    "path": "/play/local",
+    "readySelector": "main",
+    "settleMs": 600
+  },
+  {
+    "slug": "online",
+    "path": "/play/online",
+    "readySelector": "main",
+    "settleMs": 800
+  },
+  {
+    "slug": "history",
+    "path": "/history",
+    "readySelector": "main",
+    "settleMs": 400
+  }
+]

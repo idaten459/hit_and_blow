@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import { CodeSequence } from "@/components/code-sequence";
 import type { DraftValue } from "@/lib/game/draft";
+import { formatHistoryFeedback } from "@/lib/game/format";
 import type { AssistInfo, GameSettings, Guess, SessionPlayer } from "@/lib/game/types";
 
 interface MatchConsoleProps {
@@ -113,6 +114,8 @@ export function MatchConsole({
   opponentDraft
 }: MatchConsoleProps) {
   const [isAssistOpen, setIsAssistOpen] = useState(false);
+  const shouldShowStatusText =
+    statusText.trim().length > 0 && !(statusTone === "neutral" && currentPlayerName);
   const startingPlayerIndex = getStartingPlayerIndex(settings, players, guesses, currentPlayerName);
   const totalTurnSlots = getTotalTurnSlots(settings, players, guesses, currentPlayerName);
   const remainingTurnSlots =
@@ -172,7 +175,7 @@ export function MatchConsole({
           <article className="card board-grid history-stage">
             <div className={`status-banner ${statusTone}`}>
               <span className="status-label">{currentPlayerName ? `現在手番: ${currentPlayerName}` : "対局"}</span>
-              <p className="status-text">{statusText}</p>
+              {shouldShowStatusText ? <p className="status-text">{statusText}</p> : null}
             </div>
 
             <div className="meta-list">
@@ -222,11 +225,17 @@ export function MatchConsole({
                   {guesses.map((guess) => (
                     <div key={`${guess.turnNumber}-${guess.createdAt}`} className="history-entry">
                       <div className="history-line">
-                        <span className="history-round">R{guess.roundNumber} T{guess.turnNumber}</span>
+                        <span className="history-turn">{guess.turnNumber}</span>
                         <span className="history-player">{guess.playerName}</span>
-                        <CodeSequence className="history-code" values={guess.values} colorCount={settings.colorCount} />
+                        <CodeSequence
+                          compact
+                          wrap
+                          className="history-code"
+                          values={guess.values}
+                          colorCount={settings.colorCount}
+                        />
                         <span className="history-feedback">
-                          {guess.feedback.hits} Hit / {guess.feedback.blows} Blow
+                          {formatHistoryFeedback(guess.feedback.hits, guess.feedback.blows)}
                         </span>
                       </div>
                     </div>
@@ -234,9 +243,11 @@ export function MatchConsole({
                   {futureTurns.map((futureTurn) => (
                     <div key={`future-turn-${futureTurn.turnNumber}`} className="history-entry future">
                       <div className="history-line">
-                        <span className="history-round">R{futureTurn.roundNumber} T{futureTurn.turnNumber}</span>
+                        <span className="history-turn">{futureTurn.turnNumber}</span>
                         <span className="history-player future-label">{futureTurn.playerName}</span>
                         <CodeSequence
+                          compact
+                          wrap
                           className="history-code"
                           values={Array.from({ length: settings.codeLength }, () => null)}
                           colorCount={settings.colorCount}
@@ -279,12 +290,11 @@ export function MatchConsole({
                   {isAssistOpen && assistInfo ? (
                     <div className="assist-grid" style={{ marginTop: "1rem" }}>
                       <div>
-                        <div className="assist-value">
-                          {assistInfo.remainingCandidates?.toLocaleString() ?? "表示なし"}
-                        </div>
+                        <div className="assist-value">{assistInfo.displayCount}</div>
                         <p className="card-copy">
-                          {assistInfo.isAccurate ? "残り候補数" : "簡易ヒント"}
+                          {assistInfo.mode === "exact" ? "残り候補数" : "残り候補数の概算"}
                         </p>
+                        {assistInfo.detail ? <p className="subtle-copy">{assistInfo.detail}</p> : null}
                       </div>
                       <p className="subtle-copy">{assistInfo.note}</p>
                       <div>

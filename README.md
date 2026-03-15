@@ -20,6 +20,11 @@ This repository can be deployed to Render as-is.
 - For stable online play, keep the service at a single instance unless room state is moved to Redis or another shared store.
 - Node.js is pinned through `package.json` `engines`.
 
+## Local runtime
+
+- Node.js 24.x required
+- npm 10+ required
+
 ブラウザで動作する Hit and Blow ゲームです。PC とスマホの両方に対応し、次の 3 モードを提供します。
 
 - 1人プレイ
@@ -121,7 +126,7 @@ This repository can be deployed to Render as-is.
 
 ### 前提
 
-- Node.js 22 以降を推奨
+- Node.js 24.x を前提
 - npm 10 以降を推奨
 
 ### セットアップ

@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startTransition, useState } from "react";
-import { getCandidateSpaceSize, getDefaultSettings, validateSettings } from "@/lib/game/engine";
+import {
+  EXACT_ASSIST_LIMIT,
+  getCandidateSpaceSize,
+  getDefaultSettings,
+  validateSettings
+} from "@/lib/game/engine";
 import type { GameMode, GameSettings } from "@/lib/game/types";
 import { createSearchParams } from "@/lib/settings";
 
@@ -128,7 +133,7 @@ export function SettingsForm() {
             </div>
 
             <div className="field">
-              <span className="toggle-row">
+              <label className="toggle-row" htmlFor="allowDuplicates">
                 <span>
                   <strong>同色あり</strong>
                   <br />
@@ -137,37 +142,42 @@ export function SettingsForm() {
                   </span>
                 </span>
                 <input
+                  id="allowDuplicates"
                   aria-label="同色あり"
                   className="checkbox"
                   type="checkbox"
                   checked={settings.allowDuplicates}
                   onChange={(event) => updateSettings("allowDuplicates", event.target.checked)}
                 />
-              </span>
+              </label>
             </div>
 
             <div className="field">
-              <span className="toggle-row">
+              <label className="toggle-row" htmlFor="assistEnabled">
                 <span>
                   <strong>アシストモード</strong>
                   <br />
                   <span className="subtle-copy">残り候補数や使用済み記号を表示します。</span>
                 </span>
                 <input
+                  id="assistEnabled"
                   aria-label="アシストモード"
                   className="checkbox"
                   type="checkbox"
                   checked={settings.assistEnabled}
                   onChange={(event) => updateSettings("assistEnabled", event.target.checked)}
                 />
-              </span>
+              </label>
             </div>
           </div>
 
           <div className="inline-actions" style={{ marginTop: "1rem" }}>
             <span className="meta-pill">候補空間: {candidateSpace.toLocaleString()}</span>
             <span className="meta-pill">
-              アシスト: {candidateSpace <= 100_000 ? "残り候補数を厳密表示" : "簡易ヒントのみ"}
+              アシスト:{" "}
+              {candidateSpace <= EXACT_ASSIST_LIMIT
+                ? "残り候補数を厳密表示"
+                : `${EXACT_ASSIST_LIMIT.toLocaleString()}以上または概算表示`}
             </span>
           </div>
 

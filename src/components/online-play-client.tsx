@@ -7,6 +7,7 @@ import { io, type Socket } from "socket.io-client";
 import { MatchConsole } from "@/components/match-console";
 import { createEmptyDraft, findNextSlotIndex, hasAnyDraftValue, toGuessValues } from "@/lib/game/draft";
 import { buildAssistInfo } from "@/lib/game/engine";
+import { getPendingRoundResolutionMessage } from "@/lib/game/format";
 import type { MatchSummary, RoomStatePayload, SessionPlayer } from "@/lib/game/types";
 import { appendMatchSummary, loadOnlineSession, saveOnlineSession } from "@/lib/session/history";
 import { getOrCreatePlayerToken } from "@/lib/session/token";
@@ -47,6 +48,7 @@ export function OnlinePlayClient() {
     activeSettings.assistEnabled && roomState?.roundState
       ? buildAssistInfo(activeSettings, deferredGuesses)
       : null;
+  const pendingResolutionMessage = getPendingRoundResolutionMessage(roomState?.roundState ?? null);
 
   const currentPlayer = useMemo(() => {
     if (!roomState?.roundState) {
@@ -75,6 +77,14 @@ export function OnlinePlayClient() {
       values: draft.values
     };
   }, [myPlayerId, roomState]);
+
+  const statusTone = summary ? "success" : pendingResolutionMessage ? "warning" : isMyTurn ? "neutral" : "warning";
+  const statusText = summary
+    ? summary.winnerLabel
+    : !everyoneConnected
+      ? notice
+      : pendingResolutionMessage ??
+        (isMyTurn ? "あなたの番です。" : `${currentPlayer?.name ?? "相手"} の入力待ちです。`);
 
   useEffect(() => {
     roomStateRef.current = roomState;
@@ -447,16 +457,8 @@ export function OnlinePlayClient() {
       players={roomState.players}
       currentPlayerName={currentPlayer?.name ?? null}
       roundLabel={`ラウンド ${roomState.roundState?.roundNumber ?? 1}`}
-      statusTone={summary ? "success" : isMyTurn ? "neutral" : "warning"}
-      statusText={
-        summary
-          ? summary.winnerLabel
-          : everyoneConnected
-            ? isMyTurn
-              ? "あなたの番です。"
-              : `${currentPlayer?.name ?? "相手"} の入力待ちです。`
-            : notice
-      }
+      statusTone={statusTone}
+      statusText={statusText}
       currentGuess={currentGuess}
       activeSlotIndex={activeSlotIndex}
       onSelectSymbol={pushSymbol}

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": ">=22.0.0 <23",
+    "node": ">=24.0.0 <25",
     "npm": ">=10"
   },
   "scripts": {
@@ -13,7 +13,12 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:layout": "playwright test tests/e2e/history-layout.spec.ts",
+    "capture:visual": "playwright test --config=playwright.visual.config.ts",
+    "capture:visual:desktop": "cross-env VISUAL_CAPTURE_PROFILE=desktop playwright test --config=playwright.visual.config.ts",
+    "capture:visual:mobile": "cross-env VISUAL_CAPTURE_PROFILE=mobile playwright test --config=playwright.visual.config.ts",
+    "review:capture": "node scripts/visual-review.mjs"
   },
   "dependencies": {
     "cross-env": "^7.0.3",
@@ -25,7 +30,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.51.1",
-    "@types/node": "^22.15.17",
+    "@types/node": "^24.12.0",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "eslint": "^9.25.1",

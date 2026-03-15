@@ -6,4 +6,7 @@ test-results
 dist
 *.log
 .DS_Store
-
+visual-feedback/captures/*
+!visual-feedback/captures/.gitkeep
+visual-feedback/current/*
+!visual-feedback/current/.gitkeep

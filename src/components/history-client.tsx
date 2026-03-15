@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CodeSequence } from "@/components/code-sequence";
+import { formatHistoryFeedback } from "@/lib/game/format";
 import type { MatchSummary } from "@/lib/game/types";
 import { loadMatchHistory, saveMatchHistory } from "@/lib/session/history";
 
@@ -54,7 +55,7 @@ export function HistoryClient() {
                 <h2 className="card-title" style={{ marginTop: "1rem" }}>
                   {summary.players.join(" 対 ")}
                 </h2>
-                <div className="card-copy">
+                <div className="card-copy history-secret">
                   正解: <CodeSequence values={summary.secret} colorCount={summary.settings.colorCount} />
                 </div>
                 <div className="history-meta" style={{ marginTop: "1rem" }}>
@@ -68,15 +69,17 @@ export function HistoryClient() {
                   {summary.guesses.slice(0, 6).map((guess) => (
                     <div key={`${summary.id}-${guess.turnNumber}`} className="history-entry">
                       <div className="history-line">
-                        <span className="history-round">R{guess.roundNumber} T{guess.turnNumber}</span>
+                        <span className="history-turn">{guess.turnNumber}</span>
                         <span className="history-player">{guess.playerName}</span>
                         <CodeSequence
+                          compact
+                          wrap
                           className="history-code"
                           values={guess.values}
                           colorCount={summary.settings.colorCount}
                         />
                         <span className="history-feedback">
-                          {guess.feedback.hits} Hit / {guess.feedback.blows} Blow
+                          {formatHistoryFeedback(guess.feedback.hits, guess.feedback.blows)}
                         </span>
                       </div>
                     </div>

@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { MatchConsole } from "@/components/match-console";
 import { createEmptyDraft, findNextSlotIndex, toGuessValues } from "@/lib/game/draft";
 import { advanceRound, buildAssistInfo, createInitialRoundState, generateSecret } from "@/lib/game/engine";
+import { getPendingRoundResolutionMessage } from "@/lib/game/format";
 import { createMatchSummary } from "@/lib/game/summary";
 import type { GameMode, GameSettings, RoundState, SessionPlayer } from "@/lib/game/types";
 import { appendMatchSummary } from "@/lib/session/history";
@@ -63,6 +64,15 @@ function getStatus(state: RoundState): { tone: "neutral" | "success" | "warning"
     return {
       tone: "success",
       text: `${winner?.name ?? "プレイヤー"} が正解しました。`
+    };
+  }
+
+  const pendingResolutionMessage = getPendingRoundResolutionMessage(state);
+
+  if (pendingResolutionMessage) {
+    return {
+      tone: "warning",
+      text: pendingResolutionMessage
     };
   }
 

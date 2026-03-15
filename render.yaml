@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: hit-and-blow
+    runtime: node
+    region: singapore
+    numInstances: 1
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit

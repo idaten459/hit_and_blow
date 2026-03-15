@@ -1,5 +1,25 @@
 # Hit and Blow
 
+## Render deployment
+
+This repository can be deployed to Render as-is.
+
+- `render.yaml` provisions a single Node web service for the custom Next.js + Socket.IO server.
+- The health check endpoint is `GET /api/health`.
+- The service is intentionally fixed to `1` instance because online rooms are stored in memory.
+
+### Deploy steps
+
+1. Push this branch to GitHub.
+2. In Render, create a new Blueprint instance from the repository.
+3. Review `render.yaml`, then deploy.
+4. Open `https://<your-service>.onrender.com/api/health` and confirm it returns `200`.
+
+### Notes
+
+- For stable online play, keep the service at a single instance unless room state is moved to Redis or another shared store.
+- Node.js is pinned through `package.json` `engines`.
+
 ブラウザで動作する Hit and Blow ゲームです。PC とスマホの両方に対応し、次の 3 モードを提供します。
 
 - 1人プレイ

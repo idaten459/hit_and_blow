@@ -2,10 +2,14 @@
   "name": "hit-and-blow",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22.0.0 <23",
+    "npm": ">=10"
+  },
   "scripts": {
     "dev": "tsx watch server.ts",
-    "build": "next build",
-    "start": "cross-env NODE_ENV=production tsx server.ts",
+    "build": "next build && tsc -p tsconfig.server.json",
+    "start": "cross-env NODE_ENV=production node dist/server.js",
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
